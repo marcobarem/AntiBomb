@@ -1,4 +1,4 @@
-#include "mural.h"
+#include "../include/mural.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
