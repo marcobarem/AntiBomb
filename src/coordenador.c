@@ -2,6 +2,7 @@
 #include "../include/mural.h"
 #include "../include/utils.h"
 #include "../include/exibicao.h"
+#include "../include/tedax.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -15,9 +16,37 @@ static bool jogo_ativo = true;
 // Função auxiliar para capturar entrada do jogador
 void capturar_input(char *input, size_t tamanho) {
     mvprintw(LINES - 2, 0, "Digite o comando (Ex: 1-M2-1 para Tedax 1 desarmar Módulo 2 na Bancada 1): ");
+    clrtoeol(); // Limpa a linha antes de capturar a entrada
     refresh();
-    getstr(input);
+
+    getstr(input); // Captura a entrada do jogador
+
+    // Verifica se o comando está vazio
+    if (strlen(input) == 0) {
+        mvprintw(LINES - 1, 0, "Comando inválido! Digite novamente.");
+        refresh();
+        capturar_input(input, tamanho); // Recursivamente solicita o comando
+    }
 }
+
+
+int processar_comando(const char *comando) {
+    int tedax_id, modulo_id, bancada_id;
+
+    // Tenta interpretar o comando no formato esperado
+    if (sscanf(comando, "%d-M%d-%d", &tedax_id, &modulo_id, &bancada_id) == 3) {
+        // Processa o comando, retorna sucesso
+        return enviar_modulo_para_tedax(tedax_id, modulo_id, bancada_id);
+    } else {
+        // Comando inválido
+        mvprintw(LINES - 1, 0, "Comando inválido! Tente novamente.");
+        refresh();
+        return 0; // Falha
+    }
+}
+
+
+
 
 // Thread principal do coordenador
 void *coordenador_func(void *arg) {

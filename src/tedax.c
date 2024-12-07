@@ -23,6 +23,12 @@ void inicializar_tedax(int num_tedax) {
     }
 }
 
+int enviar_modulo_para_tedax(int tedax_id, int modulo_id, int bancada_id) {
+    // Simula o envio de um módulo para o Tedax
+    printf("Tedax %d desarmando Módulo %d na Bancada %d\n", tedax_id, modulo_id, bancada_id);
+    return 1; // Sucesso
+}
+
 void finalizar_tedax() {
     free(tedax_threads);
 }

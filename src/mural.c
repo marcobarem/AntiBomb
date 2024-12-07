@@ -25,10 +25,16 @@ void gerar_modulo() {
 
 Modulo obter_modulo() {
     pthread_mutex_lock(&mutex_mural);
-    Modulo modulo = mural[--mural_count];
+    if (mural_count > 0) {
+        Modulo modulo = mural[--mural_count];
+        pthread_mutex_unlock(&mutex_mural);
+        return modulo;
+    }
     pthread_mutex_unlock(&mutex_mural);
-    return modulo;
+    Modulo vazio = {"", 0, false};
+    return vazio;
 }
+
 
 Modulo obter_modulo_por_id(const char *id) {
     pthread_mutex_lock(&mutex_mural);
