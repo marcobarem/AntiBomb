@@ -1,4 +1,4 @@
-#include "exibicao.h"
+#include "../include/exibicao.h"
 #include <ncurses.h>
 
 void inicializar_exibicao() {

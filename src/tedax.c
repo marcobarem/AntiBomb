@@ -1,8 +1,9 @@
-#include "tedax.h"
-#include "mural.h"
+#include "../include/tedax.h"
+#include "../include/mural.h"
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 pthread_t *tedax_threads;
 

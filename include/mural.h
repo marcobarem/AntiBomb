@@ -5,7 +5,7 @@
 
 // Estrutura de um módulo
 typedef struct {
-    char tipo[10];             // Tipo do módulo
+    char tipo[15];             // Tipo do módulo
     int tempo_para_desarmar;   // Tempo necessário para desarmar
     bool desarmado;            // Status de desarme
 } Modulo;

@@ -1,12 +1,13 @@
-#include "coordenador.h"
-#include "mural.h"
-#include "utils.h"
-#include "exibicao.h"
+#include "../include/coordenador.h"
+#include "../include/mural.h"
+#include "../include/utils.h"
+#include "../include/exibicao.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <ncurses.h>
+#include <stdlib.h>
 
 // Flag para indicar quando o jogo deve terminar
 static bool jogo_ativo = true;
