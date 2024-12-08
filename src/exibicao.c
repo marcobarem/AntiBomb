@@ -1,4 +1,5 @@
 #include "../include/exibicao.h"
+#include "../include/exibicao.h"
 #include <ncurses.h>
 
 

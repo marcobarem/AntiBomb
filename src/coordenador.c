@@ -11,68 +11,67 @@
 #include <stdlib.h>
 
 // Flag para indicar quando o jogo deve terminar
-static bool jogo_ativo = true;
+bool jogo_ativo = true;
 
-// Função auxiliar para capturar entrada do jogador
+// Função para capturar entrada do jogador
 void capturar_input(char *input, size_t tamanho) {
-    mvprintw(LINES - 2, 0, "Digite o comando (Ex: 1-M2-1 para Tedax 1 desarmar Módulo 2 na Bancada 1): ");
-    clrtoeol(); // Limpa a linha antes de capturar a entrada
-    refresh();
-
-    getstr(input); // Captura a entrada do jogador
-
-    // Verifica se o comando está vazio
-    if (strlen(input) == 0) {
-        mvprintw(LINES - 1, 0, "Comando inválido! Digite novamente.");
+    while (1) {
+        mvprintw(LINES - 2, 0, "Digite o comando (Ex: 1-M2-1 para Tedax 1 desarmar Módulo 2 na Bancada 1): ");
+        clrtoeol();
         refresh();
-        capturar_input(input, tamanho); // Recursivamente solicita o comando
+
+        getstr(input);
+
+        if (strlen(input) > 0) {
+            return;
+        }
+
+        mvprintw(LINES - 1, 0, "Entrada inválida! Tente novamente.");
+        refresh();
     }
 }
 
 
+// Processa comandos do jogador
 int processar_comando(const char *comando) {
     int tedax_id, modulo_id, bancada_id;
 
-    // Tenta interpretar o comando no formato esperado
     if (sscanf(comando, "%d-M%d-%d", &tedax_id, &modulo_id, &bancada_id) == 3) {
-        // Processa o comando, retorna sucesso
-        return enviar_modulo_para_tedax(tedax_id, modulo_id, bancada_id);
-    } else {
-        // Comando inválido
-        mvprintw(LINES - 1, 0, "Comando inválido! Tente novamente.");
-        refresh();
-        return 0; // Falha
+        if (tedax_id > 0 && modulo_id > 0 && bancada_id > 0) {
+            if (enviar_modulo_para_tedax(tedax_id, modulo_id, bancada_id)) {
+                mvprintw(LINES - 1, 0, "Tedax %d está desarmando o Módulo %d na Bancada %d.",
+                         tedax_id, modulo_id, bancada_id);
+                refresh();
+                return 1; // Comando processado com sucesso
+            }
+        }
     }
+
+    mvprintw(LINES - 1, 0, "Comando inválido! Use o formato correto (Ex: 1-M2-1).");
+    refresh();
+    return 0; // Comando inválido
 }
-
-
-
 
 // Thread principal do coordenador
 void *coordenador_func(void *arg) {
     char comando[50];
 
     while (jogo_ativo) {
-        // Captura o comando do jogador
-        capturar_input(comando, sizeof(comando));
+        capturar_input(comando, sizeof(comando)); // Captura o comando do jogador
 
-        // Exemplo de comando: "1-M2-1" (Tedax 1, Módulo 2, Bancada 1)
         int tedax_id, bancada_id;
         char modulo_id[10];
 
         if (sscanf(comando, "%d-%[^-]-%d", &tedax_id, modulo_id, &bancada_id) == 3) {
-            // Verifica se há bancadas disponíveis
             if (sem_trywait(&sem_bancadas) == 0) { // Bancada disponível
                 pthread_mutex_lock(&mutex_mural);
 
-                // Tenta obter o módulo do mural
                 Modulo modulo = obter_modulo_por_id(modulo_id);
                 if (modulo.desarmado) {
                     mvprintw(LINES - 1, 0, "Módulo já foi desarmado! Tente novamente.\n");
                 } else {
                     mvprintw(LINES - 1, 0, "Designando módulo %s para Tedax %d na Bancada %d...\n",
                              modulo.tipo, tedax_id, bancada_id);
-                    // Aqui, a lógica pode ser expandida para passar o módulo para o Tedax
                 }
 
                 pthread_mutex_unlock(&mutex_mural);
@@ -92,11 +91,13 @@ void *coordenador_func(void *arg) {
 void inicializar_coordenador() {
     pthread_t thread_coordenador;
 
-    // Cria a thread do coordenador
     if (pthread_create(&thread_coordenador, NULL, coordenador_func, NULL) != 0) {
         fprintf(stderr, "Erro ao criar a thread do coordenador\n");
         exit(EXIT_FAILURE);
     }
+
+    // Detach da thread para evitar necessidade de join
+    pthread_detach(thread_coordenador);
 }
 
 void finalizar_coordenador() {

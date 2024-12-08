@@ -1,6 +1,7 @@
 # Compilador e flags
 CC = gcc
-CFLAGS = -Wall -pthread -lncurses -Iinclude
+CFLAGS = -Wall -pthread -Iinclude
+LDFLAGS = -lncurses
 
 # Diretórios
 SRC_DIR = src
@@ -19,13 +20,18 @@ all: $(TARGET)
 
 # Regra para compilar o executável
 $(TARGET): $(OBJS)
-	$(CC) -o $@ $^ $(CFLAGS)
+	@echo "Compilando o executável..."
+	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+	@echo "Compilação concluída com sucesso!"
 
 # Regra para compilar os arquivos objeto
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR)
+	@echo "Compilando $<..."
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Regra para limpar arquivos objeto e executáveis
 clean:
+	@echo "Limpando arquivos..."
 	rm -rf $(OBJ_DIR) $(TARGET)
+	@echo "Limpeza concluída!"

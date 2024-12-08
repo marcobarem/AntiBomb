@@ -3,6 +3,7 @@
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // Mutexes globais
 pthread_mutex_t mutex_bancadas;
@@ -15,6 +16,7 @@ sem_t sem_modulos;
 // Variável global para configuração
 Config config;
 
+// Inicializa mutexes e semáforos para sincronização
 void inicializar_sincronizacao() {
     // Inicializa mutexes
     if (pthread_mutex_init(&mutex_bancadas, NULL) != 0) {
@@ -37,6 +39,7 @@ void inicializar_sincronizacao() {
     }
 }
 
+// Finaliza mutexes e semáforos
 void finalizar_sincronizacao() {
     pthread_mutex_destroy(&mutex_bancadas);
     pthread_mutex_destroy(&mutex_mural);
@@ -44,7 +47,14 @@ void finalizar_sincronizacao() {
     sem_destroy(&sem_modulos);
 }
 
+
+// Define a configuração inicial do jogo, com validação
 void definir_configuracao(int num_tedax, int num_bancadas, int tempo_jogo) {
+    if (num_tedax <= 0 || num_bancadas <= 0 || tempo_jogo <= 0) {
+        fprintf(stderr, "Configuração inválida! Todos os valores devem ser positivos.\n");
+        exit(EXIT_FAILURE);
+    }
+
     config.num_tedax = num_tedax;
     config.num_bancadas = num_bancadas;
     config.tempo_jogo = tempo_jogo;
