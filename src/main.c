@@ -8,7 +8,7 @@
 #include "../include/tedax.h"
 #include "../include/coordenador.h"
 
-int tempo_restante = 180; // Variável global
+int tempo_restante; // Variável global
 
 void controle_tempo() {
     tempo_restante = config.tempo_jogo; // Inicializa o tempo
@@ -23,6 +23,9 @@ void controle_tempo() {
             sleep(1); // Avança o tempo somente se o comando foi válido
             tempo_restante--;
         }
+        printf("Tempo restante: %d\n", tempo_restante);
+        printf("Mural vazio: %d\n", mural_vazio());
+
     }
 
     // Exibe o resultado do jogo
@@ -39,25 +42,41 @@ void controle_tempo() {
 
 
 int main() {
-    // Configuração inicial do jogo
-    definir_configuracao(3, 2, 60); // Configura 3 Tedax, 2 Bancadas, e 60 segundos de jogo
+    definir_configuracao(3, 2, 180); // Configura 3 Tedax, 2 Bancadas, e 180 segundos de jogo
+    printf("Configuração inicial concluída.\n");
 
-    // Inicialização dos componentes do jogo
     inicializar_sincronizacao();
+    printf("Sincronização inicializada.\n");
+
     inicializar_mural();
+    printf("Mural inicializado.\n");
+
     inicializar_exibicao();
+    printf("Exibição inicializada.\n");
+
     inicializar_tedax(config.num_tedax);
+    printf("Threads Tedax inicializadas.\n");
+
     inicializar_coordenador();
+    printf("Coordenador inicializado.\n");
 
-    // Controle principal do jogo
-    controle_tempo();
+    controle_tempo(); // Controle principal do jogo
 
-    // Finalização dos componentes do jogo
     finalizar_coordenador();
+    printf("Coordenador finalizado.\n");
+
     finalizar_tedax();
+    printf("Threads Tedax finalizadas.\n");
+
     finalizar_exibicao();
+    printf("Exibição finalizada.\n");
+
     finalizar_mural();
+    printf("Mural finalizado.\n");
+
     finalizar_sincronizacao();
+    printf("Sincronização finalizada.\n");
 
     return 0;
 }
+

@@ -36,20 +36,58 @@ void capturar_input(char *input, size_t tamanho) {
 int processar_comando(const char *comando) {
     int tedax_id, modulo_id, bancada_id;
 
-    if (sscanf(comando, "%d-M%d-%d", &tedax_id, &modulo_id, &bancada_id) == 3) {
-        if (tedax_id > 0 && modulo_id > 0 && bancada_id > 0) {
-            if (enviar_modulo_para_tedax(tedax_id, modulo_id, bancada_id)) {
-                mvprintw(LINES - 1, 0, "Tedax %d está desarmando o Módulo %d na Bancada %d.",
-                         tedax_id, modulo_id, bancada_id);
-                refresh();
-                return 1; // Comando processado com sucesso
-            }
-        }
+    // Valida o formato do comando
+    if (sscanf(comando, "%d-M%d-%d", &tedax_id, &modulo_id, &bancada_id) != 3) {
+        mvprintw(LINES - 1, 0, "Erro: Comando inválido! Use o formato: Tedax-Módulo-Bancada (Ex: 1-M2-1).");
+        refresh();
+        return 0; // Comando inválido
     }
 
-    mvprintw(LINES - 1, 0, "Comando inválido! Use o formato correto (Ex: 1-M2-1).");
+    // Valida IDs
+    if (tedax_id < 1 || tedax_id > config.num_tedax) {
+        mvprintw(LINES - 1, 0, "Erro: Tedax %d é inválido! Escolha entre 1 e %d.", tedax_id, config.num_tedax);
+        refresh();
+        return 0; // Comando inválido
+    }
+    if (modulo_id < 1 || modulo_id > MAX_MODULOS) {
+        mvprintw(LINES - 1, 0, "Erro: Módulo %d é inválido! Escolha entre 1 e %d.", modulo_id, MAX_MODULOS);
+        refresh();
+        return 0; // Comando inválido
+    }
+    if (bancada_id < 1 || bancada_id > config.num_bancadas) {
+        mvprintw(LINES - 1, 0, "Erro: Bancada %d é inválida! Escolha entre 1 e %d.", bancada_id, config.num_bancadas);
+        refresh();
+        return 0; // Comando inválido
+    }
+
+    // Obtém o módulo correspondente do mural
+    pthread_mutex_lock(&mutex_mural);
+    Modulo *modulo = NULL;
+    for (int i = 0; i < mural_count; i++) {
+        if (atoi(mural[i].tipo + 1) == modulo_id) { // Extrai o ID numérico do módulo
+            modulo = &mural[i];
+            break;
+        }
+    }
+    pthread_mutex_unlock(&mutex_mural);
+
+    if (!modulo) {
+        mvprintw(LINES - 1, 0, "Erro: Módulo %d não encontrado no mural.", modulo_id);
+        refresh();
+        return 0; // Comando inválido
+    }
+
+    // Tenta enviar o módulo para o Tedax e a bancada especificados
+    if (!enviar_modulo_para_tedax(tedax_id, modulo_id, bancada_id)) {
+        mvprintw(LINES - 1, 0, "Erro: Não foi possível atribuir o Módulo %d ao Tedax %d na Bancada %d.", modulo_id, tedax_id, bancada_id);
+        refresh();
+        return 0; // Comando inválido
+    }
+
+    // Mensagem de sucesso
+    mvprintw(LINES - 1, 0, "Tedax %d desarmando Módulo %d na Bancada %d.", tedax_id, modulo_id, bancada_id);
     refresh();
-    return 0; // Comando inválido
+    return 1; // Comando processado com sucesso
 }
 
 // Thread principal do coordenador
@@ -58,35 +96,19 @@ void *coordenador_func(void *arg) {
 
     while (jogo_ativo) {
         capturar_input(comando, sizeof(comando)); // Captura o comando do jogador
+        sem_post(&sem_comando); // Sinaliza que há um novo comando
 
-        int tedax_id, bancada_id;
-        char modulo_id[10];
-
-        if (sscanf(comando, "%d-%[^-]-%d", &tedax_id, modulo_id, &bancada_id) == 3) {
-            if (sem_trywait(&sem_bancadas) == 0) { // Bancada disponível
-                pthread_mutex_lock(&mutex_mural);
-
-                Modulo modulo = obter_modulo_por_id(modulo_id);
-                if (modulo.desarmado) {
-                    mvprintw(LINES - 1, 0, "Módulo já foi desarmado! Tente novamente.\n");
-                } else {
-                    mvprintw(LINES - 1, 0, "Designando módulo %s para Tedax %d na Bancada %d...\n",
-                             modulo.tipo, tedax_id, bancada_id);
-                }
-
-                pthread_mutex_unlock(&mutex_mural);
-            } else {
-                mvprintw(LINES - 1, 0, "Nenhuma bancada disponível! Aguarde...\n");
-            }
+        if (processar_comando(comando)) {
+            mvprintw(LINES - 1, 0, "Comando processado com sucesso.");
         } else {
-            mvprintw(LINES - 1, 0, "Comando inválido! Tente novamente.\n");
+            mvprintw(LINES - 1, 0, "Erro ao processar o comando.");
         }
-
         refresh();
     }
 
     return NULL;
 }
+
 
 void inicializar_coordenador() {
     pthread_t thread_coordenador;
